@@ -1,0 +1,7 @@
+[package]
+name = "wasmparse"
+version = "0.1.0"
+authors = ["Matt Harrison <hi@matt-harrison.com>"]
+
+[dependencies]
+byteorder = "1"
