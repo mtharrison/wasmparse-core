@@ -1,9 +1,11 @@
 extern crate byteorder;
+#[macro_use]
+extern crate serde_derive;
 
 mod leb128;
 mod types;
 
-use std::io::{Cursor, Read};
+use std::io::Read;
 use byteorder::{LittleEndian, ReadBytesExt};
 use leb128::ReadLeb128Ext;
 use types::*;
@@ -18,25 +20,24 @@ fn parse_section<T: Read>(reader: &mut T) -> Option<WasmSection> {
     };
 
     let mut payload_len = read_leb128_unsigned_value(reader);
-
     let mut name = None;
 
     if code == 0 {
         let (name_len, name_len_bytes) = reader.leb128_unsigned().expect("Parse error");
         let mut n = vec![0; name_len as usize];
         reader.read(&mut n).unwrap();
-        let nam = unsafe { String::from_utf8_unchecked(n) };
+        let nam = String::from_utf8_lossy(&n).into_owned();
         name = Some(nam);
         payload_len -= name_len as u32;
         payload_len -= name_len_bytes as u32;
     }
 
-    let mut payload_bytes = vec![0u8; (payload_len) as usize];
-    reader.read_exact(&mut payload_bytes).expect("Parse error");
+    println!("Found code {}", code);
 
     let body = match code {
-        1 => WasmSectionBody::Types(Box::new(parse_type_section(payload_bytes))),
-        _ => WasmSectionBody::Custom(payload_bytes),
+        1 => WasmSectionBody::Types(Box::new(parse_type_section(reader))),
+        3 => WasmSectionBody::Function(Box::new(parse_function_section(reader))),
+        _ => WasmSectionBody::Custom(Box::new(parse_custom_section(reader, payload_len as usize))),
     };
 
     Some(WasmSection {
@@ -70,22 +71,22 @@ fn read_value_type<T: Read>(reader: &mut T) -> ValueType {
 }
 
 fn parse_type_section<T: Read>(reader: &mut T) -> TypeSection {
-    let count = read_leb128_unsigned_value(&mut reader);
+    let count = read_leb128_unsigned_value(reader);
 
     let mut entries = Vec::new();
 
     for _ in 0..count {
-        let form = read_value_type(&mut reader);
-        let param_count = read_leb128_unsigned_value(&mut reader);
+        let form = read_value_type(reader);
+        let param_count = read_leb128_unsigned_value(reader);
         let mut param_types = Vec::new();
 
         for _ in 0..param_count {
-            param_types.push(read_value_type(&mut reader));
+            param_types.push(read_value_type(reader));
         }
 
-        let return_count = read_leb128_unsigned_value(&mut reader);
+        let return_count = read_leb128_unsigned_value(reader);
         let return_type = match return_count {
-            1 => Some(read_value_type(&mut reader)),
+            1 => Some(read_value_type(reader)),
             _ => None,
         };
 
@@ -101,6 +102,25 @@ fn parse_type_section<T: Read>(reader: &mut T) -> TypeSection {
     }
 
     TypeSection { count, entries }
+}
+fn parse_function_section<T: Read>(reader: &mut T) -> FunctionSection {
+    let count = read_leb128_unsigned_value(reader);
+
+    let mut types = Vec::new();
+
+    for _ in 0..count {
+        types.push(read_leb128_unsigned_value(reader));
+    }
+
+    FunctionSection { count, types }
+}
+
+fn parse_custom_section<T: Read>(reader: &mut T, len: usize) -> CustomSection {
+    let mut data = vec![0; len];
+    reader
+        .read_exact(&mut data)
+        .expect("Cannot read data from custom section");
+    CustomSection { len, data }
 }
 
 pub fn parse<T: Read>(mut rdr: T) -> Result<WasmModule, String> {
@@ -123,8 +143,6 @@ pub fn parse<T: Read>(mut rdr: T) -> Result<WasmModule, String> {
         version,
         sections: Vec::new(),
     };
-
-    // Parse first section
 
     loop {
         let section = parse_section(&mut rdr);

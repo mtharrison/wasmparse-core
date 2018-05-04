@@ -11,7 +11,6 @@ fn leb128<T: Read + ?Sized>(reader: &mut T, signage: Sign) -> Result<(i64, usize
     let mut result: i64 = 0;
     let mut shift: usize = 0;
     let mut bytes_read = 0;
-
     let ceil_bytes = (n as f64 / 7.0).ceil() as usize;
 
     loop {
