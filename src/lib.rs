@@ -17,7 +17,7 @@ fn parse_section<T: Read>(reader: &mut T) -> Option<WasmSection> {
         Err(_) => return None,
     };
 
-    let (mut payload_len, _) = reader.leb128_unsigned().expect("Parse error");
+    let mut payload_len = read_leb128_unsigned_value(reader);
 
     let mut name = None;
 
@@ -27,8 +27,8 @@ fn parse_section<T: Read>(reader: &mut T) -> Option<WasmSection> {
         reader.read(&mut n).unwrap();
         let nam = unsafe { String::from_utf8_unchecked(n) };
         name = Some(nam);
-        payload_len -= name_len;
-        payload_len -= name_len_bytes as i64;
+        payload_len -= name_len as u32;
+        payload_len -= name_len_bytes as u32;
     }
 
     let mut payload_bytes = vec![0u8; (payload_len) as usize];
@@ -40,7 +40,7 @@ fn parse_section<T: Read>(reader: &mut T) -> Option<WasmSection> {
     };
 
     Some(WasmSection {
-        payload_len: payload_len as u32,
+        payload_len,
         name,
         body,
     })
@@ -59,6 +59,11 @@ fn number_to_value_type(number: i64) -> ValueType {
     }
 }
 
+fn read_leb128_unsigned_value<T: Read>(reader: &mut T) -> u32 {
+    let value = reader.leb128_unsigned().expect("Parse error").0;
+    value as u32
+}
+
 fn read_value_type<T: Read>(reader: &mut T) -> ValueType {
     let (form_num, _) = reader.leb128_signed().expect("Parse error");
     number_to_value_type(form_num)
@@ -66,46 +71,37 @@ fn read_value_type<T: Read>(reader: &mut T) -> ValueType {
 
 fn parse_type_section(data: Vec<u8>) -> TypeSection {
     let mut c = Cursor::new(data);
-    let count = c.leb128_unsigned().expect("Parse error").0;
+    let count = read_leb128_unsigned_value(&mut c);
 
     let mut entries = Vec::new();
 
-    for _i in 0..count {
+    for _ in 0..count {
         let form = read_value_type(&mut c);
-
-        let param_count = c.leb128_unsigned().expect("Parse error").0;
+        let param_count = read_leb128_unsigned_value(&mut c);
         let mut param_types = Vec::new();
 
-        if param_count > 0 {
-            for _j in 0..param_count {
-                param_types.push(read_value_type(&mut c));
-            }
+        for _ in 0..param_count {
+            param_types.push(read_value_type(&mut c));
         }
 
-        let return_count = c.leb128_unsigned().expect("Parse error").0;
+        let return_count = read_leb128_unsigned_value(&mut c);
         let return_type = match return_count {
-            1 => {
-                let form_num = c.leb128_signed().expect("Parse error").0;
-                Some(number_to_value_type(form_num))
-            }
+            1 => Some(read_value_type(&mut c)),
             _ => None,
         };
 
         let entry = FunctionType {
             form,
-            param_count: param_count as u32,
+            param_count,
             param_types,
-            return_count: return_count as u32,
+            return_count,
             return_type,
         };
 
         entries.push(entry);
     }
 
-    TypeSection {
-        count: count as u32,
-        entries,
-    }
+    TypeSection { count, entries }
 }
 
 pub fn parse<T: Read>(mut rdr: T) -> Result<WasmModule, String> {
