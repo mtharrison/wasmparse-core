@@ -69,24 +69,23 @@ fn read_value_type<T: Read>(reader: &mut T) -> ValueType {
     number_to_value_type(form_num)
 }
 
-fn parse_type_section(data: Vec<u8>) -> TypeSection {
-    let mut c = Cursor::new(data);
-    let count = read_leb128_unsigned_value(&mut c);
+fn parse_type_section<T: Read>(reader: &mut T) -> TypeSection {
+    let count = read_leb128_unsigned_value(&mut reader);
 
     let mut entries = Vec::new();
 
     for _ in 0..count {
-        let form = read_value_type(&mut c);
-        let param_count = read_leb128_unsigned_value(&mut c);
+        let form = read_value_type(&mut reader);
+        let param_count = read_leb128_unsigned_value(&mut reader);
         let mut param_types = Vec::new();
 
         for _ in 0..param_count {
-            param_types.push(read_value_type(&mut c));
+            param_types.push(read_value_type(&mut reader));
         }
 
-        let return_count = read_leb128_unsigned_value(&mut c);
+        let return_count = read_leb128_unsigned_value(&mut reader);
         let return_type = match return_count {
-            1 => Some(read_value_type(&mut c)),
+            1 => Some(read_value_type(&mut reader)),
             _ => None,
         };
 
