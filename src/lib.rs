@@ -39,7 +39,7 @@ fn parse_section<T: Read>(reader: &mut T) -> Result<Option<WasmSection>, Error> 
     }
 
     let body = match code {
-        1 => WasmSectionBody::Types(Box::new(TypeSection::from_reader(reader).expect("Parse error"))),
+        1 => WasmSectionBody::Types(Box::new(TypeSection::from_reader(reader)?)),
         2 => WasmSectionBody::Import(Box::new(ImportSection::from_reader(reader).expect("Parse error"))),
         3 => WasmSectionBody::Function(Box::new(FunctionSection::from_reader(reader).expect("Parse error"))),
         _ => WasmSectionBody::Custom(Box::new(CustomSection::from_reader(reader, payload_len as usize).expect("Parse error"))),
