@@ -19,22 +19,11 @@ impl TableSection {
             let (element_type_num, _) = reader.leb128_signed()?;
             let element_type = ElementType::from_i64(element_type_num)?;
 
-            // Read flags
-            let (flags, _) = reader.leb128_unsigned()?;
-            let (initial, _) = reader.leb128_unsigned()?;
-            let mut maximum = None;
-            if flags == 1 {
-                let (max, _) = reader.leb128_unsigned()?;
-                maximum = Some(max as u32);
-            }
+            let limits = ResizableLimits::from_reader(reader)?;
 
             let entry = TableType {
                 element_type,
-                limits: ResizableLimits {
-                    flags: flags as u8,
-                    initial: initial as u32,
-                    maximum,
-                },
+                limits,
             };
 
             entries.push(entry);
@@ -65,11 +54,4 @@ impl ElementType {
             _ => Err(Error::new(ErrorKind::Other, "Unknown Element Type")),
         }
     }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct ResizableLimits {
-    flags: u8,
-    initial: u32,
-    maximum: Option<u32>,
 }

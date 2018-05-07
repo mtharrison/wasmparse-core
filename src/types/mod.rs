@@ -4,7 +4,8 @@ pub mod import_section;
 pub mod table_section;
 pub mod type_section;
 
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Read};
+use leb128::ReadLeb128Ext;
 
 #[derive(Debug)]
 pub struct WasmModule {
@@ -61,4 +62,29 @@ pub struct FunctionType {
     pub param_types: Vec<ValueType>,
     pub return_count: u32,
     pub return_type: Option<ValueType>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ResizableLimits {
+    flags: u8,
+    initial: u32,
+    maximum: Option<u32>,
+}
+
+impl ResizableLimits {
+    pub fn from_reader<T: Read>(reader: &mut T) -> Result<ResizableLimits, Error> {
+        let (flags, _) = reader.leb128_unsigned()?;
+        let (initial, _) = reader.leb128_unsigned()?;
+        let mut maximum = None;
+        if flags == 1 {
+            let (max, _) = reader.leb128_unsigned()?;
+            maximum = Some(max as u32);
+        }
+
+        Ok(ResizableLimits {
+            flags: flags as u8,
+            initial: initial as u32,
+            maximum,
+        })
+    }
 }

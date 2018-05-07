@@ -13,6 +13,7 @@ use types::function_section::*;
 use types::import_section::*;
 use types::table_section::*;
 use types::type_section::*;
+use types::memory_section::*;
 
 static WASM_MAGIC_NUMBER: u32 = 0x6d736100;
 static WASM_VERSION_KNOWN: u32 = 0x01;
@@ -44,6 +45,7 @@ fn parse_section<T: Read>(reader: &mut T) -> Result<Option<WasmSection>, Error> 
         2 => WasmSectionBody::Import(Box::new(ImportSection::from_reader(reader)?)),
         3 => WasmSectionBody::Function(Box::new(FunctionSection::from_reader(reader)?)),
         4 => WasmSectionBody::Table(Box::new(TableSection::from_reader(reader)?)),
+        5 => WasmSectionBody::Memory(Box::new(MemorySection::from_reader(reader)?)),
         _ => WasmSectionBody::Custom(Box::new(CustomSection::from_reader(
             reader,
             payload_len as usize,
