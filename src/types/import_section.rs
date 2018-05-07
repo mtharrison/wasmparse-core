@@ -21,7 +21,10 @@ impl ImportSection {
             entries.push(entry);
         }
 
-        Ok(ImportSection { count: count as u32, entries })
+        Ok(ImportSection {
+            count: count as u32,
+            entries,
+        })
     }
 }
 
@@ -47,10 +50,7 @@ impl ImportEntry {
         reader.read(&mut buff)?;
         let field_name = String::from_utf8_lossy(&buff).into_owned();
 
-        let external_type_code = reader.read_u8().unwrap();
-        let kind = ExternalKind::from_u8(external_type_code)?;
-
-        let _ = reader.leb128_unsigned()?;
+        let kind = ExternalKind::from_reader(reader)?;
 
         Ok(ImportEntry {
             module_name_len: module_name_len as u32,
@@ -64,23 +64,25 @@ impl ImportEntry {
 
 #[derive(Debug, PartialEq)]
 pub enum ExternalKind {
-    Function,
+    Function(u32),
     Table,
     Memory,
     Global,
 }
 
 impl ExternalKind {
-    pub fn from_u8(num: u8) -> Result<ExternalKind, Error> {
-        match num {
-            0 => Ok(ExternalKind::Function),
-            1 => Ok(ExternalKind::Table),
-            2 => Ok(ExternalKind::Memory),
-            3 => Ok(ExternalKind::Global),
-            _ => Err(Error::new(
-                ErrorKind::Other,
-                "Unknown External Kind",
-            )),
+    pub fn from_reader<T: Read>(reader: &mut T) -> Result<ExternalKind, Error> {
+        let external_type_code = reader.read_u8()?;
+
+        match external_type_code {
+            0 => {
+                let (fn_idx, _) = reader.leb128_unsigned()?;
+                Ok(ExternalKind::Function(fn_idx as u32))
+            }
+            1 => unimplemented!("Table imports not implemented"),
+            2 => unimplemented!("Memory imports not implemented"),
+            3 => unimplemented!("Global imports not implemented"),
+            _ => Err(Error::new(ErrorKind::Other, "Unknown External Kind")),
         }
     }
 }

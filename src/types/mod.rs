@@ -1,6 +1,7 @@
 pub mod custom_section;
 pub mod function_section;
 pub mod import_section;
+pub mod table_section;
 pub mod type_section;
 
 use std::io::{Error, ErrorKind};
@@ -21,9 +22,10 @@ pub struct WasmSection {
 #[derive(Debug, PartialEq)]
 pub enum WasmSectionBody {
     Custom(Box<custom_section::CustomSection>),
-    Types(Box<type_section::TypeSection>),
     Function(Box<function_section::FunctionSection>),
     Import(Box<import_section::ImportSection>),
+    Table(Box<table_section::TableSection>),
+    Types(Box<type_section::TypeSection>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -47,10 +49,7 @@ impl ValueType {
             -0x10 => Ok(ValueType::Anyfunc),
             -0x20 => Ok(ValueType::Func),
             -0x40 => Ok(ValueType::EmptyBlockType),
-            _ => Err(Error::new(
-                ErrorKind::Other,
-                "Unknown Value Type",
-            ))
+            _ => Err(Error::new(ErrorKind::Other, "Unknown Value Type")),
         }
     }
 }

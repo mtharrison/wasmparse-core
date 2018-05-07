@@ -11,11 +11,11 @@ use types::*;
 use types::custom_section::*;
 use types::function_section::*;
 use types::import_section::*;
+use types::table_section::*;
 use types::type_section::*;
 
 static WASM_MAGIC_NUMBER: u32 = 0x6d736100;
 static WASM_VERSION_KNOWN: u32 = 0x01;
-
 
 fn parse_section<T: Read>(reader: &mut T) -> Result<Option<WasmSection>, Error> {
     let code = match reader.read_u8() {
@@ -31,18 +31,23 @@ fn parse_section<T: Read>(reader: &mut T) -> Result<Option<WasmSection>, Error> 
         let mut n = vec![0; name_len as usize];
         reader.read(&mut n)?;
         let nam = String::from_utf8_lossy(&n).into_owned();
-        println!("{} {} {:?}", name_len, name_len_bytes, n);
         name = Some(nam);
 
         payload_len -= name_len;
         payload_len -= name_len_bytes as i64;
     }
 
+    println!("Got code {}", code);
+
     let body = match code {
         1 => WasmSectionBody::Types(Box::new(TypeSection::from_reader(reader)?)),
-        2 => WasmSectionBody::Import(Box::new(ImportSection::from_reader(reader).expect("Parse error"))),
-        3 => WasmSectionBody::Function(Box::new(FunctionSection::from_reader(reader).expect("Parse error"))),
-        _ => WasmSectionBody::Custom(Box::new(CustomSection::from_reader(reader, payload_len as usize).expect("Parse error"))),
+        2 => WasmSectionBody::Import(Box::new(ImportSection::from_reader(reader)?)),
+        3 => WasmSectionBody::Function(Box::new(FunctionSection::from_reader(reader)?)),
+        4 => WasmSectionBody::Table(Box::new(TableSection::from_reader(reader)?)),
+        _ => WasmSectionBody::Custom(Box::new(CustomSection::from_reader(
+            reader,
+            payload_len as usize,
+        )?)),
     };
 
     Ok(Some(WasmSection {
