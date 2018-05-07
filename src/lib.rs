@@ -3,7 +3,7 @@ extern crate byteorder;
 mod leb128;
 mod types;
 
-use std::io::Read;
+use std::io::{Error, Read};
 use byteorder::{LittleEndian, ReadBytesExt};
 
 use leb128::ReadLeb128Ext;
@@ -54,25 +54,26 @@ fn parse_section<T: Read>(reader: &mut T) -> Option<WasmSection> {
     })
 }
 
-fn read_leb128_unsigned_value<T: Read>(reader: &mut T) -> u32 {
-    let value = reader.leb128_unsigned().expect("Parse error").0;
-    value as u32
-}
-
-pub fn parse<T: Read>(mut rdr: T) -> Result<WasmModule, String> {
-    let magic = rdr.read_u32::<LittleEndian>().unwrap();
+pub fn parse<T: Read>(mut rdr: T) -> Result<WasmModule, Error> {
+    let magic = rdr.read_u32::<LittleEndian>()?;
 
     if magic != WASM_MAGIC_NUMBER {
-        return Err(format!(
-            "Magic number 0x{:x} is not the expected value 0x{:x}",
-            magic, WASM_MAGIC_NUMBER
+        return Err(Error::new(
+            ErrorKind::Other,
+            format!(
+                "Magic number 0x{:x} is not the expected value 0x{:x}",
+                magic, WASM_MAGIC_NUMBER
+            ),
         ));
     }
 
-    let version = rdr.read_u32::<LittleEndian>().unwrap();
+    let version = rdr.read_u32::<LittleEndian>()?;
 
     if version != WASM_VERSION_KNOWN {
-        return Err(format!("Unknown WASM version {}", version));
+        return Err(Error::new(
+            ErrorKind::Other,
+            format!("Unknown WASM version {}", version),
+        ));
     }
 
     let mut module = WasmModule {
