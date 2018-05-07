@@ -3,7 +3,7 @@ extern crate byteorder;
 mod leb128;
 mod types;
 
-use std::io::{Error, Read};
+use std::io::{Error, ErrorKind, Read};
 use byteorder::{LittleEndian, ReadBytesExt};
 
 use leb128::ReadLeb128Ext;
@@ -17,28 +17,26 @@ static WASM_MAGIC_NUMBER: u32 = 0x6d736100;
 static WASM_VERSION_KNOWN: u32 = 0x01;
 
 
-fn parse_section<T: Read>(reader: &mut T) -> Option<WasmSection> {
+fn parse_section<T: Read>(reader: &mut T) -> Result<Option<WasmSection>, Error> {
     let code = match reader.read_u8() {
         Ok(code) => code,
-        Err(_) => return None,
+        Err(_) => return Ok(None),
     };
 
-    let mut payload_len = read_leb128_unsigned_value(reader);
+    let (mut payload_len, _) = reader.leb128_unsigned()?;
     let mut name = None;
 
     if code == 0 {
-        let (name_len, name_len_bytes) = reader.leb128_unsigned().expect("Parse error");
+        let (name_len, name_len_bytes) = reader.leb128_unsigned()?;
         let mut n = vec![0; name_len as usize];
-        reader.read(&mut n).unwrap();
+        reader.read(&mut n)?;
         let nam = String::from_utf8_lossy(&n).into_owned();
         println!("{} {} {:?}", name_len, name_len_bytes, n);
         name = Some(nam);
 
-        payload_len -= name_len as u32;
-        payload_len -= name_len_bytes as u32;
+        payload_len -= name_len;
+        payload_len -= name_len_bytes as i64;
     }
-
-    println!("Found code {}", code);
 
     let body = match code {
         1 => WasmSectionBody::Types(Box::new(TypeSection::from_reader(reader).expect("Parse error"))),
@@ -47,11 +45,11 @@ fn parse_section<T: Read>(reader: &mut T) -> Option<WasmSection> {
         _ => WasmSectionBody::Custom(Box::new(CustomSection::from_reader(reader, payload_len as usize).expect("Parse error"))),
     };
 
-    Some(WasmSection {
-        payload_len,
+    Ok(Some(WasmSection {
+        payload_len: payload_len as u32,
         name,
         body,
-    })
+    }))
 }
 
 pub fn parse<T: Read>(mut rdr: T) -> Result<WasmModule, Error> {
@@ -82,7 +80,7 @@ pub fn parse<T: Read>(mut rdr: T) -> Result<WasmModule, Error> {
     };
 
     loop {
-        let section = parse_section(&mut rdr);
+        let section = parse_section(&mut rdr)?;
         match section {
             Some(section) => module.sections.push(section),
             None => break,
