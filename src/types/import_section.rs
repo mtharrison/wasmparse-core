@@ -1,6 +1,5 @@
 use std::io::{Error, Read};
 use leb128::ReadLeb128Ext;
-use byteorder::ReadBytesExt;
 
 use super::*;
 
@@ -59,30 +58,5 @@ impl ImportEntry {
             field_name,
             kind,
         })
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum ExternalKind {
-    Function(u32),
-    Table,
-    Memory,
-    Global,
-}
-
-impl ExternalKind {
-    pub fn from_reader<T: Read>(reader: &mut T) -> Result<ExternalKind, Error> {
-        let external_type_code = reader.read_u8()?;
-
-        match external_type_code {
-            0 => {
-                let (fn_idx, _) = reader.leb128_unsigned()?;
-                Ok(ExternalKind::Function(fn_idx as u32))
-            }
-            1 => unimplemented!("Table imports not implemented"),
-            2 => unimplemented!("Memory imports not implemented"),
-            3 => unimplemented!("Global imports not implemented"),
-            _ => Err(Error::new(ErrorKind::Other, "Unknown External Kind")),
-        }
     }
 }

@@ -16,8 +16,8 @@ impl MemorySection {
         let mut entries = Vec::new();
 
         for _ in 0..count {
-            let limit = ResizableLimits::from_reader(reader)?;
-            entries.push(limit);
+            let limits = ResizableLimits::from_reader(reader)?;
+            entries.push(MemoryType { limits });
         }
 
         Ok(MemorySection {
@@ -25,9 +25,4 @@ impl MemorySection {
             entries,
         })
     }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct MemoryType {
-    pub limits: ResizableLimits,
 }

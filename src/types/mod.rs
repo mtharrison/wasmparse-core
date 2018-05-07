@@ -1,11 +1,24 @@
 pub mod custom_section;
 pub mod function_section;
 pub mod import_section;
+pub mod memory_section;
 pub mod table_section;
 pub mod type_section;
+pub mod export_section;
+pub mod code_section;
+
+pub use custom_section::CustomSection;
+pub use function_section::FunctionSection;
+pub use import_section::ImportSection;
+pub use memory_section::MemorySection;
+pub use table_section::TableSection;
+pub use type_section::TypeSection;
+pub use export_section::ExportSection;
+pub use code_section::CodeSection;
 
 use std::io::{Error, ErrorKind, Read};
 use leb128::ReadLeb128Ext;
+use byteorder::ReadBytesExt;
 
 #[derive(Debug)]
 pub struct WasmModule {
@@ -22,11 +35,14 @@ pub struct WasmSection {
 
 #[derive(Debug, PartialEq)]
 pub enum WasmSectionBody {
-    Custom(Box<custom_section::CustomSection>),
-    Function(Box<function_section::FunctionSection>),
-    Import(Box<import_section::ImportSection>),
-    Table(Box<table_section::TableSection>),
-    Types(Box<type_section::TypeSection>),
+    Custom(Box<CustomSection>),
+    Function(Box<FunctionSection>),
+    Import(Box<ImportSection>),
+    Memory(Box<MemorySection>),
+    Table(Box<TableSection>),
+    Types(Box<TypeSection>),
+    Export(Box<ExportSection>),
+    Code(Box<CodeSection>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -87,4 +103,34 @@ impl ResizableLimits {
             maximum,
         })
     }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ExternalKind {
+    Function(u32),
+    Table,
+    Memory(MemoryType),
+    Global,
+}
+
+impl ExternalKind {
+    pub fn from_reader<T: Read>(reader: &mut T) -> Result<ExternalKind, Error> {
+        let external_type_code = reader.read_u8()?;
+
+        match external_type_code {
+            0 => {
+                let (fn_idx, _) = reader.leb128_unsigned()?;
+                Ok(ExternalKind::Function(fn_idx as u32))
+            }
+            1 => unimplemented!("Table imports not implemented"),
+            2 => unimplemented!("Memory imports not implemented"),
+            3 => unimplemented!("Global imports not implemented"),
+            _ => Err(Error::new(ErrorKind::Other, "Unknown External Kind")),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct MemoryType {
+    pub limits: ResizableLimits,
 }
