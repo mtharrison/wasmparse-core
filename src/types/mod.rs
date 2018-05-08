@@ -6,6 +6,7 @@ pub mod table_section;
 pub mod type_section;
 pub mod export_section;
 pub mod code_section;
+pub mod start_section;
 
 pub use custom_section::CustomSection;
 pub use function_section::FunctionSection;
@@ -15,6 +16,7 @@ pub use table_section::TableSection;
 pub use type_section::TypeSection;
 pub use export_section::ExportSection;
 pub use code_section::CodeSection;
+pub use start_section::StartSection;
 
 use std::io::{Error, ErrorKind, Read};
 use leb128::ReadLeb128Ext;
@@ -42,6 +44,7 @@ pub enum WasmSectionBody {
     Table(Box<TableSection>),
     Types(Box<TypeSection>),
     Export(Box<ExportSection>),
+    Start(Box<StartSection>),
     Code(Box<CodeSection>),
 }
 

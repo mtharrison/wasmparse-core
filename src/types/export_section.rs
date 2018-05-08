@@ -2,8 +2,6 @@ use std::io::{Error, Read};
 use leb128::ReadLeb128Ext;
 use byteorder::ReadBytesExt;
 
-use super::*;
-
 #[derive(Debug, PartialEq)]
 pub struct ExportSection {
     pub count: u32,

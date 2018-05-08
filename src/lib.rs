@@ -3,7 +3,7 @@ extern crate byteorder;
 mod leb128;
 mod types;
 
-use std::io::{Error, ErrorKind, Read};
+use std::io::{Error, ErrorKind, Read, Seek, SeekFrom};
 use byteorder::{LittleEndian, ReadBytesExt};
 
 use leb128::ReadLeb128Ext;
@@ -41,6 +41,7 @@ fn parse_section<T: Read>(reader: &mut T) -> Result<Option<WasmSection>, Error> 
         4 => WasmSectionBody::Table(Box::new(TableSection::from_reader(reader)?)),
         5 => WasmSectionBody::Memory(Box::new(MemorySection::from_reader(reader)?)),
         7 => WasmSectionBody::Export(Box::new(ExportSection::from_reader(reader)?)),
+        8 => WasmSectionBody::Start(Box::new(StartSection::from_reader(reader)?)),
         10 => WasmSectionBody::Code(Box::new(CodeSection::from_reader(reader)?)),
         _ => WasmSectionBody::Custom(Box::new(CustomSection::from_reader(
             reader,
@@ -55,7 +56,7 @@ fn parse_section<T: Read>(reader: &mut T) -> Result<Option<WasmSection>, Error> 
     }))
 }
 
-pub fn parse<T: Read>(mut rdr: T) -> Result<WasmModule, Error> {
+pub fn parse<T: Read + Seek>(mut rdr: T) -> Result<WasmModule, Error> {
     let magic = rdr.read_u32::<LittleEndian>()?;
 
     if magic != WASM_MAGIC_NUMBER {
@@ -83,7 +84,10 @@ pub fn parse<T: Read>(mut rdr: T) -> Result<WasmModule, Error> {
     };
 
     loop {
-        let section = parse_section(&mut rdr)?;
+        let section = parse_section(&mut rdr).unwrap_or_else(|err| {
+            let position = rdr.seek(SeekFrom::Current(0)).unwrap();
+            panic!(format!("PARSE ERROR AT 0x{:012X}: {}", position, err));
+        });
         match section {
             Some(section) => module.sections.push(section),
             None => break,
