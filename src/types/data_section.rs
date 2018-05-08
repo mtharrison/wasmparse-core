@@ -61,12 +61,10 @@ pub struct Expression(Vec<u8>);
 impl Expression {
     pub fn from_reader<T: Read>(reader: &mut T) -> Result<Expression, Error> {
 
-        let mut bytes = Vec::new();
-        let mut buff = [0];
+        let mut bytes = vec![0];
 
-        while buff[0] != 0x0b {
-            reader.read_exact(&mut buff)?;
-            bytes.push(buff[0]);
+        while bytes[bytes.len() - 1] != 0x0b {
+            reader.read_exact(&mut bytes[bytes.len() - 1..])?;
         }
 
         Ok(Expression(bytes))
