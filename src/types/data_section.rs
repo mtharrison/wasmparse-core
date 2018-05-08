@@ -54,20 +54,3 @@ impl DataSegment {
         })
     }
 }
-
-#[derive(Debug, PartialEq)]
-pub struct Expression(Vec<u8>);
-
-impl Expression {
-    pub fn from_reader<T: Read>(reader: &mut T) -> Result<Expression, Error> {
-
-        let mut bytes = vec![0];
-
-        while bytes[bytes.len() - 1] != 0x0b {
-            reader.read_exact(&mut bytes[bytes.len() - 1..])?;
-        }
-
-        Ok(Expression(bytes))
-    }
-}
-

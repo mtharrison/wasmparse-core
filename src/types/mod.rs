@@ -8,6 +8,7 @@ pub mod export_section;
 pub mod code_section;
 pub mod start_section;
 pub mod data_section;
+pub mod global_section;
 
 pub use custom_section::CustomSection;
 pub use function_section::FunctionSection;
@@ -19,6 +20,7 @@ pub use export_section::ExportSection;
 pub use code_section::CodeSection;
 pub use start_section::StartSection;
 pub use data_section::DataSection;
+pub use global_section::GlobalSection;
 
 use std::io::{Error, ErrorKind, Read};
 use leb128::ReadLeb128Ext;
@@ -46,6 +48,7 @@ pub enum WasmSectionBody {
     Table(Box<TableSection>),
     Types(Box<TypeSection>),
     Export(Box<ExportSection>),
+    Global(Box<GlobalSection>),
     Start(Box<StartSection>),
     Code(Box<CodeSection>),
     Data(Box<DataSection>),
@@ -140,3 +143,22 @@ impl ExternalKind {
 pub struct MemoryType {
     pub limits: ResizableLimits,
 }
+
+#[derive(Debug, PartialEq)]
+pub struct Expression(Vec<u8>);
+
+impl Expression {
+    pub fn from_reader<T: Read>(reader: &mut T) -> Result<Expression, Error> {
+
+        let mut bytes = Vec::new();
+        let mut buff = [0];
+
+        while buff[0] != 0x0b {
+            reader.read_exact(&mut buff)?;
+            bytes.push(buff[0]);
+        }
+
+        Ok(Expression(bytes))
+    }
+}
+
