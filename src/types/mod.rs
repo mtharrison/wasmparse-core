@@ -9,6 +9,7 @@ pub mod code_section;
 pub mod start_section;
 pub mod data_section;
 pub mod global_section;
+pub mod element_section;
 
 pub use custom_section::CustomSection;
 pub use function_section::FunctionSection;
@@ -21,6 +22,7 @@ pub use code_section::CodeSection;
 pub use start_section::StartSection;
 pub use data_section::DataSection;
 pub use global_section::GlobalSection;
+pub use element_section::ElementSection;
 
 use std::io::{Error, ErrorKind, Read};
 use leb128::ReadLeb128Ext;
@@ -52,6 +54,7 @@ pub enum WasmSectionBody {
     Start(Box<StartSection>),
     Code(Box<CodeSection>),
     Data(Box<DataSection>),
+    Element(Box<ElementSection>),
 }
 
 #[derive(Debug, PartialEq)]

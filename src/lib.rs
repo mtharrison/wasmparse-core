@@ -41,10 +41,9 @@ fn parse_section<T: Read>(reader: &mut T) -> Result<Option<WasmSection>, Error> 
         4 => WasmSectionBody::Table(Box::new(TableSection::from_reader(reader)?)),
         5 => WasmSectionBody::Memory(Box::new(MemorySection::from_reader(reader)?)),
         6 => WasmSectionBody::Global(Box::new(GlobalSection::from_reader(reader)?)),
-        // Implement global section
         7 => WasmSectionBody::Export(Box::new(ExportSection::from_reader(reader)?)),
         8 => WasmSectionBody::Start(Box::new(StartSection::from_reader(reader)?)),
-        // Implement element section
+        9 => WasmSectionBody::Element(Box::new(ElementSection::from_reader(reader)?)),
         10 => WasmSectionBody::Code(Box::new(CodeSection::from_reader(reader)?)),
         11 => WasmSectionBody::Data(Box::new(DataSection::from_reader(reader)?)),
         _ => WasmSectionBody::Custom(Box::new(CustomSection::from_reader(
