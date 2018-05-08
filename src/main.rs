@@ -5,7 +5,7 @@ use std::io::{Cursor, Read};
 
 fn main() {
     let mut buff = Vec::new();
-    let mut f = File::open("files/test-globals.wasm").expect("file not found");
+    let mut f = File::open("files/wasmbooth.wasm").expect("file not found");
     f.read_to_end(&mut buff).unwrap();
 
     let module = wasmparse::parse(Cursor::new(buff));
