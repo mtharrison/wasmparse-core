@@ -1,8 +1,8 @@
-use std::io::{Error, Read};
-use leb128::ReadLeb128Ext;
 use byteorder::ReadBytesExt;
+use leb128::ReadLeb128Ext;
+use std::io::{Error, Read};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ExportSection {
     pub count: u32,
     pub entries: Vec<ExportEntry>,
@@ -26,7 +26,7 @@ impl ExportSection {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ExportEntry {
     pub field_name_len: u32,
     pub field_name: String,

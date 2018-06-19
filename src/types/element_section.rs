@@ -1,9 +1,9 @@
-use std::io::{Error, Read};
 use leb128::ReadLeb128Ext;
+use std::io::{Error, Read};
 
 use super::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ElementSection {
     pub count: u32,
     pub entries: Vec<ElementSegment>,
@@ -27,7 +27,7 @@ impl ElementSection {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ElementSegment {
     pub index: u32,
     pub offset: Expression,
@@ -52,7 +52,7 @@ impl ElementSegment {
             index: index as u32,
             offset,
             num_elem: num_elem as u32,
-            elems
+            elems,
         })
     }
 }

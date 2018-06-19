@@ -1,9 +1,9 @@
-use std::io::{Error, Read};
 use leb128::ReadLeb128Ext;
+use std::io::{Error, Read};
 
 use super::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct MemorySection {
     pub count: u32,
     pub entries: Vec<MemoryType>,

@@ -1,12 +1,15 @@
 extern crate byteorder;
+extern crate serde;
+extern crate serde_json;
+#[macro_use]
+extern crate serde_derive;
 
 mod leb128;
 mod types;
 
-use std::io::{Error, ErrorKind, Read, Seek, SeekFrom};
 use byteorder::{LittleEndian, ReadBytesExt};
-
 use leb128::ReadLeb128Ext;
+use std::io::{Error, ErrorKind, Read, Seek, SeekFrom};
 use types::*;
 
 static WASM_MAGIC_NUMBER: u32 = 0x6d736100;
@@ -31,8 +34,6 @@ fn parse_section<T: Read>(reader: &mut T) -> Result<Option<WasmSection>, Error> 
         payload_len -= name_len;
         payload_len -= name_len_bytes as i64;
     }
-
-    println!("Got code {}", code);
 
     let body = match code {
         1 => WasmSectionBody::Types(Box::new(TypeSection::from_reader(reader)?)),

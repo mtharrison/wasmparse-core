@@ -1,9 +1,9 @@
-use std::io::{Error, Read};
 use leb128::ReadLeb128Ext;
+use std::io::{Error, Read};
 
 use super::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct TypeSection {
     pub count: u32,
     pub entries: Vec<FunctionType>,
@@ -34,7 +34,7 @@ impl TypeSection {
                     let (type_num, _) = reader.leb128_signed()?;
                     let typ = ValueType::from_i64(type_num)?;
                     Some(typ)
-                },
+                }
                 _ => None,
             };
 
@@ -49,6 +49,9 @@ impl TypeSection {
             entries.push(entry);
         }
 
-        Ok(TypeSection { count: count as u32, entries })
+        Ok(TypeSection {
+            count: count as u32,
+            entries,
+        })
     }
 }

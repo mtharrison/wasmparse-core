@@ -1,9 +1,9 @@
-use std::io::{Error, Read};
 use leb128::ReadLeb128Ext;
+use std::io::{Error, Read};
 
 use super::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct GlobalSection {
     pub count: u32,
     pub globals: Vec<GlobalEntry>,
@@ -27,7 +27,7 @@ impl GlobalSection {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct GlobalEntry {
     t: GlobalType,
     init: Expression,
@@ -38,14 +38,14 @@ impl GlobalEntry {
         let t = GlobalType::from_reader(reader)?;
         let init = Expression::from_reader(reader)?;
 
-        Ok(GlobalEntry{ t, init })
+        Ok(GlobalEntry { t, init })
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct GlobalType {
     pub content_type: ValueType,
-    pub mutability: u8
+    pub mutability: u8,
 }
 
 impl GlobalType {
@@ -54,8 +54,9 @@ impl GlobalType {
         let content_type = ValueType::from_i64(content_type_num)?;
         let mutability = reader.read_u8()?;
 
-        Ok(GlobalType{ content_type, mutability })
+        Ok(GlobalType {
+            content_type,
+            mutability,
+        })
     }
 }
-
-

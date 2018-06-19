@@ -1,6 +1,6 @@
 use std::io::{Error, Read};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct CustomSection {
     pub len: usize,
     pub data: Vec<u8>,

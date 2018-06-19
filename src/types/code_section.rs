@@ -1,9 +1,9 @@
-use std::io::{Error, Read};
 use leb128::ReadLeb128Ext;
+use std::io::{Error, Read};
 
 use super::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct CodeSection {
     pub count: u32,
     pub bodies: Vec<FunctionBody>,
@@ -27,7 +27,7 @@ impl CodeSection {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct FunctionBody {
     pub body_size: u32,
     pub local_count: u32,
@@ -62,7 +62,7 @@ impl FunctionBody {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct LocalEntry {
     pub count: u32,
     pub t: ValueType,

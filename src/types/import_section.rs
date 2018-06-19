@@ -1,9 +1,9 @@
-use std::io::{Error, Read};
 use leb128::ReadLeb128Ext;
+use std::io::{Error, Read};
 
 use super::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ImportSection {
     pub count: u32,
     pub entries: Vec<ImportEntry>,
@@ -27,7 +27,7 @@ impl ImportSection {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ImportEntry {
     pub module_name_len: u32,
     pub module_name: String,

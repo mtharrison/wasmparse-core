@@ -1,47 +1,47 @@
+pub mod code_section;
 pub mod custom_section;
+pub mod data_section;
+pub mod element_section;
+pub mod export_section;
 pub mod function_section;
+pub mod global_section;
 pub mod import_section;
 pub mod memory_section;
+pub mod start_section;
 pub mod table_section;
 pub mod type_section;
-pub mod export_section;
-pub mod code_section;
-pub mod start_section;
-pub mod data_section;
-pub mod global_section;
-pub mod element_section;
 
+pub use code_section::CodeSection;
 pub use custom_section::CustomSection;
+pub use data_section::DataSection;
+pub use element_section::ElementSection;
+pub use export_section::ExportSection;
 pub use function_section::FunctionSection;
+pub use global_section::GlobalSection;
 pub use import_section::ImportSection;
 pub use memory_section::MemorySection;
+pub use start_section::StartSection;
 pub use table_section::TableSection;
 pub use type_section::TypeSection;
-pub use export_section::ExportSection;
-pub use code_section::CodeSection;
-pub use start_section::StartSection;
-pub use data_section::DataSection;
-pub use global_section::GlobalSection;
-pub use element_section::ElementSection;
 
-use std::io::{Error, ErrorKind, Read};
-use leb128::ReadLeb128Ext;
 use byteorder::ReadBytesExt;
+use leb128::ReadLeb128Ext;
+use std::io::{Error, ErrorKind, Read};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct WasmModule {
     pub version: u32,
     pub sections: Vec<WasmSection>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct WasmSection {
     pub payload_len: u32,
     pub name: Option<String>,
     pub body: WasmSectionBody,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum WasmSectionBody {
     Custom(Box<CustomSection>),
     Function(Box<FunctionSection>),
@@ -57,7 +57,7 @@ pub enum WasmSectionBody {
     Element(Box<ElementSection>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum ValueType {
     Integer32,
     Integer64,
@@ -83,7 +83,7 @@ impl ValueType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct FunctionType {
     pub form: ValueType,
     pub param_count: u32,
@@ -92,7 +92,7 @@ pub struct FunctionType {
     pub return_type: Option<ValueType>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ResizableLimits {
     flags: u8,
     initial: u32,
@@ -117,7 +117,7 @@ impl ResizableLimits {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum ExternalKind {
     Function(u32),
     Table,
@@ -142,17 +142,16 @@ impl ExternalKind {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct MemoryType {
     pub limits: ResizableLimits,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Expression(Vec<u8>);
 
 impl Expression {
     pub fn from_reader<T: Read>(reader: &mut T) -> Result<Expression, Error> {
-
         let mut bytes = Vec::new();
         let mut buff = [0];
 
@@ -164,4 +163,3 @@ impl Expression {
         Ok(Expression(bytes))
     }
 }
-
